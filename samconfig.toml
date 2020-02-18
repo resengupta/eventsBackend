@@ -1,0 +1,11 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "studioEvents"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-alva9vxt9agf"
+s3_prefix = "studioEvents"
+region = "us-east-2"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+
