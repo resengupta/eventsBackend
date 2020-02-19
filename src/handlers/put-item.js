@@ -3,40 +3,83 @@
 // Create a DocumentClient that represents the query to add an item
 const dynamodb = require('aws-sdk/clients/dynamodb');
 const docClient = new dynamodb.DocumentClient();
-
-// Get the DynamoDB table name from environment variables
+const moment = require('moment');
 const tableName = process.env.SAMPLE_TABLE;
 
 /**
  * A simple example includes a HTTP post method to add one item to a DynamoDB table.
  */
 exports.putItemHandler = async (event) => {
-    if (event.httpMethod !== 'POST') {
-        throw new Error(`postMethod only accepts POST method, you tried: ${event.httpMethod} method.`);
-    }
-    // All log statements are written to CloudWatch
-    console.info('received:', event);
+	if (event.httpMethod !== 'POST') {
+		throw new Error(`postMethod only accepts POST method, you tried: ${event.httpMethod} method.`);
+	}
 
-    // Get id and name from the body of the request
-    const body = JSON.parse(event.body)
-    const id = body.id;
-    const name = body.name;
+	// All log statements are written to CloudWatch
+	console.info('received:', event);
 
-    // Creates a new item, or replaces an old item with a new item
-    // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#put-property
-    var params = {
-        TableName : tableName,
-        Item: { id : id, name: name }
-    };
+	// Get id and name from the body of the request
+	const body = JSON.parse(event.body)
 
-    const result = await docClient.put(params).promise();
+	function Event(body) {
+		this.id = body.id;
+		this.name = body.name;
+		this.desc = body.desc;
+		this.date = body.date;
+		this.capability = body.capability;
+		this.tags = body.tags;
+		this.imageUrl = body.imageUrl;
+		this.eventUrl = body.eventUrl;
+		this.location = body.location;
+		this.speaker = body.speaker;
+		this.type = body.type;
 
-    const response = {
-        statusCode: 200,
-        body: JSON.stringify(body)
-    };
+		this.validate = function () {
+			if (this.date != null && !moment(this.date, 'MM-DD-YYYY ').isValid()) {
+				return "Data Format is incorrect. Should be MM-DD-YYYY";
+			} else {
+				return null;
+			}
+		}
+	}
 
-    // All log statements are written to CloudWatch
-    console.info(`response from: ${event.path} statusCode: ${response.statusCode} body: ${response.body}`);
-    return response;
+	var event = new Event(body)
+	const error = event.validate();
+
+	function Response(errorMessage) {
+		this.dataContent = null;
+		this.errorContent = errorMessage;
+	}
+
+	console.info('received error:', error);
+
+	if (error != null) {
+		const response = {
+			statusCode: 400,
+			body: JSON.stringify(new Response(error))
+		};
+
+		// All log statements are written to CloudWatch
+		console.info(`response from: ${event.path} statusCode: ${response.statusCode} body: ${response.body}`);
+		return response;
+	}
+
+	// Creates a new item, or replaces an old item with a new item
+	// https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#put-property
+	var params = {
+		TableName: tableName,
+		Item: event
+	};
+	console.info('received 2:', params);
+
+	const result = await docClient.put(params).promise();
+	console.info('received 3:', params);
+	const response = {
+		statusCode: 200,
+		body: 'Success'
+	};
+
+	// All log statements are written to CloudWatch
+	console.info(`response from: ${event.path} statusCode: ${response.statusCode} body: ${response.body}`);
+	return response;
 }
+

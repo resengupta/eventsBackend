@@ -26,9 +26,17 @@ exports.getAllItemsHandler = async (event) => {
 	const data = await docClient.scan(params).promise();
 	const items = data.Items;
 
+	function Response(upcomingEvents) {
+		this.dataContent = {
+			upcomingEvents: upcomingEvents,
+			pastEvents: null
+		}
+		this.errorContent = null;
+	}
+
 	const response = {
 		statusCode: 200,
-		body: JSON.stringify(items)
+		body: JSON.stringify(new Response(items))
 	};
 
 	// All log statements are written to CloudWatch
