@@ -20,6 +20,11 @@ exports.putItemHandler = async (event) => {
 	// Get id and name from the body of the request
 	const body = JSON.parse(event.body)
 
+	function Response(dataContent, errorMessage) {
+		this.dataContent = dataContent;
+		this.errorContent = errorMessage;
+	}
+
 	function Event(body) {
 		this.id = body.id;
 		this.name = body.name;
@@ -34,7 +39,8 @@ exports.putItemHandler = async (event) => {
 		this.type = body.type;
 
 		this.validate = function () {
-			if (this.date != null && !moment(this.date, 'MM-DD-YYYY ').isValid()) {
+			console.info('validation 1:', this.date);
+			if (this.date != null && !moment(this.date, 'MM-DD-YYYY', true).isValid()) {
 				return "Data Format is incorrect. Should be MM-DD-YYYY";
 			} else {
 				return null;
@@ -43,22 +49,16 @@ exports.putItemHandler = async (event) => {
 	}
 
 	var event = new Event(body)
+
 	const error = event.validate();
-
-	function Response(errorMessage) {
-		this.dataContent = null;
-		this.errorContent = errorMessage;
-	}
-
 	console.info('received error:', error);
 
 	if (error != null) {
 		const response = {
 			statusCode: 400,
-			body: JSON.stringify(new Response(error))
+			body: JSON.stringify(new Response(null, error))
 		};
 
-		// All log statements are written to CloudWatch
 		console.info(`response from: ${event.path} statusCode: ${response.statusCode} body: ${response.body}`);
 		return response;
 	}
@@ -69,16 +69,16 @@ exports.putItemHandler = async (event) => {
 		TableName: tableName,
 		Item: event
 	};
-	console.info('received 2:', params);
+	console.info('received params:', params);
 
 	const result = await docClient.put(params).promise();
-	console.info('received 3:', params);
+
+	console.info('received results:', result);
 	const response = {
 		statusCode: 200,
 		body: 'Success'
 	};
 
-	// All log statements are written to CloudWatch
 	console.info(`response from: ${event.path} statusCode: ${response.statusCode} body: ${response.body}`);
 	return response;
 }
