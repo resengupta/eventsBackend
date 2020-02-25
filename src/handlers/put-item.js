@@ -5,6 +5,7 @@ const dynamodb = require('aws-sdk/clients/dynamodb');
 const docClient = new dynamodb.DocumentClient();
 const moment = require('moment');
 const tableName = process.env.SAMPLE_TABLE;
+const uuid = require('uuid');
 
 /**
  * A simple example includes a HTTP post method to add one item to a DynamoDB table.
@@ -26,7 +27,7 @@ exports.putItemHandler = async (event) => {
 	}
 
 	function Event(body) {
-		this.id = body.id;
+		this.id = uuid.v1();
 		this.name = body.name;
 		this.desc = body.desc;
 		this.date = body.date;
@@ -37,6 +38,8 @@ exports.putItemHandler = async (event) => {
 		this.location = body.location;
 		this.speaker = body.speaker;
 		this.type = body.type;
+		this.createdDate = Date.now();
+		this.modifiedDate = Date.now();
 
 		this.validate = function () {
 			console.info('validation 1:', this.date);
